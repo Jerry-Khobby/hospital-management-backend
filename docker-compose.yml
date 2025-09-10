@@ -1,0 +1,26 @@
+# YAML configuration file for Docker Compose version 3.8
+#version: '3.8'
+
+# Define services
+services:
+  # Database service using PostgreSQL image
+  database:
+    image: postgres:latest # Use the latest PostgreSQL image from Docker Hub
+    environment:
+      POSTGRES_DB: hospital # Define the name of the database
+      POSTGRES_USER: user # Define the username for accessing the database
+      POSTGRES_PASSWORD: 2aidnd854i # Define the password for the user
+    ports:
+      - '5432:5432' # Forward the container's port 5432 to the host machine's port 5432 for accessing PostgreSQL
+
+  # Backend service
+  backend:
+    build:
+      context: . # Set the build context to the current directory
+      dockerfile: Dockerfile # Specify the Dockerfile to use for building the image # Build the Docker image using the Dockerfile in the current directory
+    ports:
+      - '3333:3333' # Forward the container's port 3333 to the host machine's port 3333 for accessing the backend service
+    depends_on:
+      - database # Ensure that the backend service starts after the database service is up and running
+    env_file:
+      - .env # Load environment variables from the .env file in the current directory
