@@ -24,3 +24,7 @@ services:
       - database # Ensure that the backend service starts after the database service is up and running
     env_file:
       - .env # Load environment variables from the .env file in the current directory
+    volumes:
+      - .:/app # Mount the current directory to /app in the container for code synchronization
+      - /app/node_modules # Mount the node_modules directory to persist installed packages
+    command: npm run start:dev # Command to start the backend service in development mode

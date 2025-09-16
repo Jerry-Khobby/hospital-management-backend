@@ -9,6 +9,7 @@ async function bootstrap() {
   .setTitle('Hospital Management API')
   .setDescription('The Hospital Management API description')
   .addTag('hospital-management')
+  .addTag('auth')
   .setVersion('1.0')
   .build();
   const document = SwaggerModule.createDocument(app,config);
