@@ -7,9 +7,9 @@ services:
   database:
     image: postgres:latest # Use the latest PostgreSQL image from Docker Hub
     environment:
-      POSTGRES_DB: hospital # Define the name of the database
-      POSTGRES_USER: user # Define the username for accessing the database
-      POSTGRES_PASSWORD: 2aidnd854i # Define the password for the user
+      POSTGRES_DB: ${POSTGRES_DB} # Define the name of the database
+      POSTGRES_USER: ${POSTGRES_USER} # Define the username for accessing the database
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD} # Define the password for the user
     ports:
       - '5432:5432' # Forward the container's port 5432 to the host machine's port 5432 for accessing PostgreSQL
 
