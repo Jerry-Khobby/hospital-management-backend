@@ -8,17 +8,16 @@ WORKDIR /app
 COPY package*.json ./
 
 # Install dependencies
-RUN npm cache clean --force
 RUN npm install --legacy-peer-deps
+
+# Copy Prisma schema and generate client (ONLY ONCE)
+COPY prisma ./prisma/
 
 # Copy the rest of the application code
 COPY . .
 
-# Generate Prisma Client code
-RUN npx prisma generate
-
-# Expose the port the app runs on, here, I was using port 3333
+# Expose the port
 EXPOSE 3333
 
-# Command to run the app
-CMD [  "npm", "run", "start:migrate:prod" ]
+# Use a simple command that will be overridden by docker-compose
+CMD ["npm", "run", "start:dev"]

@@ -66,6 +66,7 @@ enum Role {
   DOCTOR
   ADMIN
   PHARMACIST
+  NURSE
 }
 
 enum AppointmentStatus {

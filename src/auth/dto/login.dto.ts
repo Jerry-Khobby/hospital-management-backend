@@ -16,6 +16,6 @@ export class LoginDto {
   password: string;
 
   @IsNotEmpty()
-  @IsEnum(['ADMIN', 'DOCTOR', 'NURSE', 'PATIENT'])
-  role: 'ADMIN' | 'DOCTOR' | 'NURSE' | 'PATIENT';
+  @IsEnum(['ADMIN', 'DOCTOR', 'NURSE', 'PATIENT','PHARMACIST'])
+  role: 'ADMIN' | 'DOCTOR' | 'NURSE' | 'PATIENT'|'PHARMACIST';
 }

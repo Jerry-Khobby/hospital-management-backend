@@ -7,7 +7,7 @@ import * as jwt from 'jsonwebtoken'
 
 @Injectable()
 export class AuthService{
-private readonly jwtSecret = 'supersecretkey';
+private readonly jwtSecret = process.env.SECRET_KEY;
 
 constructor(private prisma:PrismaService){}
 
@@ -19,7 +19,7 @@ async hashPassword(password:string):Promise<string>{
 async generateToken(userId:number):Promise<string>{
   return jwt.sign({userId},this.jwtSecret,{expiresIn:'1h'});
 }
-async register(name:string,email:string,password:string,role:'ADMIN'|'DOCTOR'|'NURSE'|'PATIENT'):Promise<{token:String}>{
+async register(name:string,email:string,password:string,role:'ADMIN'|'DOCTOR'|'NURSE'|'PATIENT'|'PHARMACIST'):Promise<{token:String}>{
 const hashedPassword = await this.hashPassword(password);
 const user = await this.prisma.user.create({
   data:{email,password:hashedPassword,name,role}
@@ -29,7 +29,7 @@ const token = await this.generateToken(user.id)
 }
 
 //creating the function for login  with email, password and role 
-async login(email:string,password:string,role:'ADMIN'|'DOCTOR'|'NURSE'|'PATIENT'):Promise<{token:String}>{
+async login(email:string,password:string,role: 'ADMIN' | 'DOCTOR' | 'NURSE' | 'PATIENT' | 'PHARMACIST'):Promise<{token:String}>{
   const user = await this.prisma.user.findUnique({where:{email}});
   if(!user || user.role !== role){
     throw new UnauthorizedException('Invalid credentials');
