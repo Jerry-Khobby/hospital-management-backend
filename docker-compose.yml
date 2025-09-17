@@ -1,30 +1,41 @@
-# YAML configuration file for Docker Compose version 3.8
-#version: '3.8'
+version: '3.8'
 
-# Define services
 services:
-  # Database service using PostgreSQL image
+  # PostgreSQL database
   database:
-    image: postgres:latest # Use the latest PostgreSQL image from Docker Hub
+    image: postgres:latest
     environment:
-      POSTGRES_DB: ${POSTGRES_DB} # Define the name of the database
-      POSTGRES_USER: ${POSTGRES_USER} # Define the username for accessing the database
-      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD} # Define the password for the user
+      POSTGRES_DB: ${POSTGRES_DB}
+      POSTGRES_USER: ${POSTGRES_USER}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
     ports:
-      - '5432:5432' # Forward the container's port 5432 to the host machine's port 5432 for accessing PostgreSQL
+      - '5432:5432'
+    volumes:
+      - pgdata:/var/lib/postgresql/data
 
-  # Backend service
+  # Redis cache
+  redis:
+    image: redis:7-alpine
+    ports:
+      - '6379:6379'
+    command: ["redis-server", "--appendonly", "yes"] # persistence enabled
+
+  # NestJS backend
   backend:
     build:
-      context: . # Set the build context to the current directory
-      dockerfile: Dockerfile # Specify the Dockerfile to use for building the image # Build the Docker image using the Dockerfile in the current directory
+      context: .
+      dockerfile: Dockerfile
     ports:
-      - '3333:3333' # Forward the container's port 3333 to the host machine's port 3333 for accessing the backend service
+      - '3333:3333'
     depends_on:
-      - database # Ensure that the backend service starts after the database service is up and running
+      - database
+      - redis
     env_file:
-      - .env # Load environment variables from the .env file in the current directory
+      - .env
     volumes:
-      - .:/app # Mount the current directory to /app in the container for code synchronization
-      - /app/node_modules # Mount the node_modules directory to persist installed packages
-    command: sh -c "npx prisma generate && npm run start:dev" # Command to start the backend service in development mode
+      - .:/app
+      - /app/node_modules
+    command: sh -c "npx prisma generate && npm run start:dev"
+
+volumes:
+  pgdata:
