@@ -32,7 +32,7 @@ export class AuthService {
   ) {}
 
   // Redis-based rate limiting
-  private async checkLoginAttempts(email: string): Promise<void> {
+  private async checkLoginAttempts(email: string): Promise<void>{
     const lockoutKey = `lockout:${email}`;
     const attemptsKey = `attempts:${email}`;
     
