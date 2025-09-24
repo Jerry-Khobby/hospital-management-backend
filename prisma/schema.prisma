@@ -14,51 +14,51 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
-
 model User {
-  id       Int      @id @default(autoincrement())
-  name     String
-  email    String   @unique
-  password String
-  role     Role
-  patients Patient[]
-  appointments Appointment[] @relation("UserAppointments")
+  id            Int            @id @default(autoincrement())
+  name          String
+  email         String         @unique
+  password      String
+  role          Role
+  patients      Patient[]
+  appointments  Appointment[]  @relation("UserAppointments")
   prescriptions Prescription[] @relation("UserPrescriptions")
-  createdAt DateTime @default(now())
+  createdAt     DateTime       @default(now())
 }
 
 model Patient {
-  id           Int           @id @default(autoincrement())
-  name         String
-  age          Int
-  gender       String
-  contactInfo  String?
-  createdById  Int
-  createdBy    User          @relation(fields: [createdById], references: [id])
-  appointments Appointment[]
+  id            Int            @id @default(autoincrement())
+  name          String
+  age           Int
+  gender        String
+  contactInfo   String?
+  createdById   Int
+  createdBy     User           @relation(fields: [createdById], references: [id])
+  appointments  Appointment[]
   prescriptions Prescription[]
-  createdAt    DateTime @default(now())
+  createdAt     DateTime       @default(now())
+  updatedAt     DateTime       @updatedAt() // ✅ Add this line
 }
 
 model Appointment {
-  id        Int      @id @default(autoincrement())
+  id        Int               @id @default(autoincrement())
   date      DateTime
   status    AppointmentStatus @default(PENDING)
   patientId Int
-  patient   Patient  @relation(fields: [patientId], references: [id])
+  patient   Patient           @relation(fields: [patientId], references: [id])
   doctorId  Int
-  doctor    User     @relation("UserAppointments", fields: [doctorId], references: [id])
-  createdAt DateTime @default(now())
+  doctor    User              @relation("UserAppointments", fields: [doctorId], references: [id])
+  createdAt DateTime          @default(now())
 }
 
 model Prescription {
-  id        Int      @id @default(autoincrement())
+  id          Int      @id @default(autoincrement())
   medications String
-  patientId  Int
-  patient    Patient  @relation(fields: [patientId], references: [id])
-  doctorId   Int
-  doctor     User     @relation("UserPrescriptions", fields: [doctorId], references: [id])
-  createdAt  DateTime @default(now())
+  patientId   Int
+  patient     Patient  @relation(fields: [patientId], references: [id])
+  doctorId    Int
+  doctor      User     @relation("UserPrescriptions", fields: [doctorId], references: [id])
+  createdAt   DateTime @default(now())
 }
 
 enum Role {

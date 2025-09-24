@@ -317,4 +317,365 @@ export class PatientService {
       await this.releaseLock(lockKey);
     }
   }
+
+
+  /**LIST PATIENTS 
+   * 
+   *  Supports pagination, filtering, and caching
+   * Only Admins and Doctors can list all patients
+   * 
+   * ** */
+
+  /**
+   * LIST PATIENTS
+   * Supports pagination, filtering, and caching
+   * Only Admins and Doctors can list all patients
+   */
+  async listPatients(params: {
+    requesterId: number;
+    requesterRole: string;
+    limit?: number;
+    cursor?: number;
+    search?: string;
+  }): Promise<{ items: any[]; nextCursor?: number; total?: number }> {
+    const { requesterId, requesterRole, limit = 20, cursor, search } = params;
+
+    // Authorization check
+    if (!['ADMIN', 'DOCTOR'].includes(requesterRole)) {
+      throw new ForbiddenException('Not authorized to list patients');
+    }
+
+    // Sanitize inputs
+    const effectiveLimit = Math.min(Math.max(1, limit), 100);
+
+    // Check cache first
+    const cacheKey = this.buildPatientListCacheKey({
+      requesterRole,
+      limit: effectiveLimit,
+      cursor,
+      search,
+    });
+
+    try {
+      const cached = await this.cacheManager.get(cacheKey);
+      if (cached) {
+        return cached as { items: any[]; nextCursor?: number; total?: number };
+      }
+    } catch (err) {
+      this.logger.debug(`Patient list cache read failed: ${err.message}`);
+    }
+
+    // Build query conditions
+    const where: any = {};
+    if (search) {
+      where.name = {
+        contains: search.trim(),
+        mode: 'insensitive',
+      };
+    }
+
+    const queryArgs: any = {
+      where,
+      orderBy: { id: 'asc' },
+      take: effectiveLimit + 1, // Fetch one extra to determine next cursor
+      include: {
+        createdBy: {
+          select: { id: true, name: true, role: true },
+        },
+      },
+    };
+
+    if (cursor) {
+      queryArgs.cursor = { id: cursor };
+      queryArgs.skip = 1; // Skip the cursor record itself
+    }
+
+    const results = await this.prisma.patient.findMany(queryArgs);
+
+    // Determine next cursor
+    let nextCursor: number | undefined = undefined;
+    if (results.length > effectiveLimit) {
+      const nextRecord = results.pop();
+      nextCursor = nextRecord ? nextRecord.id : undefined;
+    }
+
+    // Get total count for pagination info (optional)
+    const total = await this.prisma.patient.count({ where });
+
+    // Decrypt contact info for all results
+    const items = results.map((patient) => ({
+      ...patient,
+      contactInfo: patient.contactInfo ? this.decryptContactInfo(patient.contactInfo) : null,
+    }));
+
+    const response = { items, nextCursor, total };
+
+    // Cache the results
+    try {
+      await this.cacheManager.set(cacheKey, response, 30); // 30 seconds
+    } catch (err) {
+      this.logger.debug(`Failed to cache patient list: ${err.message}`);
+    }
+
+    return response;
+  }
+
+
+  
+  /**
+   * GET SINGLE PATIENT
+   * Retrieves a patient by ID with caching
+   */
+  async getPatient(params: {
+    requesterId: number;
+    requesterRole: string;
+    patientId: number;
+  }): Promise<any> {
+    const { requesterId, requesterRole, patientId } = params;
+
+    // Authorization: Admin/Doctor can view any, Patient can view own record
+    if (requesterRole === 'PATIENT' && requesterId !== patientId) {
+      throw new ForbiddenException('Patients can only access their own record');
+    }
+
+    // Check cache first
+    const cacheKey = this.buildPatientCacheKey(patientId);
+    try {
+      const cached = await this.cacheManager.get<any>(cacheKey);
+      if (cached) {
+        return cached;
+      }
+    } catch (err) {
+      this.logger.debug(`Patient cache read failed: ${err.message}`);
+    }
+
+    // Fetch from database
+    const patient = await this.prisma.patient.findUnique({
+      where: { id: patientId },
+      include: {
+        createdBy: {
+          select: { id: true, name: true, role: true },
+        },
+        appointments: {
+          select: { id: true, date: true, status: true },
+          orderBy: { date: 'desc' },
+        },
+        prescriptions: {
+          select: { id: true, medications: true, createdAt: true },
+          orderBy: { createdAt: 'desc' },
+        },
+      },
+    });
+
+    if (!patient) {
+      throw new NotFoundException('Patient not found');
+    }
+
+    // Decrypt contact info
+    const result = {
+      ...patient,
+      contactInfo: patient.contactInfo ? this.decryptContactInfo(patient.contactInfo) : null,
+    };
+
+    // Cache the result
+    try {
+      await this.cacheManager.set(cacheKey, result, 300); // 5 minutes
+    } catch (err) {
+      this.logger.debug(`Failed to cache patient ${patientId}: ${err.message}`);
+    }
+
+    return result;
+  }
+
+  /**
+   * UPDATE PATIENT
+   * Updates patient with optimistic concurrency control
+   */
+  async updatePatient(params: {
+    requesterId: number;
+    requesterRole: string;
+    patientId: number;
+    data: {
+      name?: string;
+      age?: number;
+      gender?: string;
+      contactInfo?: string;
+    };
+    expectedUpdatedAt?: string;
+  }): Promise<any> {
+    const { requesterId, requesterRole, patientId, data, expectedUpdatedAt } = params;
+
+    // Authorization check
+    if (!['ADMIN', 'DOCTOR'].includes(requesterRole)) {
+      throw new ForbiddenException('Not authorized to update patients');
+    }
+
+    // Validate inputs
+    if (data.name) {
+      const sanitized = this.sanitizeName(data.name);
+      if (sanitized.length < 2) {
+        throw new BadRequestException('Name must be at least 2 characters long');
+      }
+      data.name = sanitized;
+    }
+
+    if (data.age !== undefined) {
+      if (!Number.isInteger(data.age) || data.age < 0 || data.age > 150) {
+        throw new BadRequestException('Age must be between 0 and 150');
+      }
+    }
+
+    if (data.gender) {
+      this.validateGender(data.gender);
+      data.gender = data.gender.toLowerCase();
+    }
+
+    // Get current patient for optimistic concurrency check
+    const currentPatient = await this.prisma.patient.findUnique({
+      where: { id: patientId },
+      select: { id: true, updatedAt: true },
+    });
+
+    if (!currentPatient) {
+      throw new NotFoundException('Patient not found');
+    }
+
+    // Optimistic concurrency control (if expectedUpdatedAt provided)
+    if (expectedUpdatedAt) {
+      const expected = new Date(expectedUpdatedAt).toISOString();
+      const actual = currentPatient.updatedAt ? new Date(currentPatient.updatedAt).toISOString() : null;
+      
+      if (actual !== expected) {
+        throw new ConflictException('Patient record was modified. Please refresh and retry.');
+      }
+    }
+
+    try {
+      // Update patient in transaction
+      const updatedPatient = await this.prisma.$transaction(async (tx) => {
+        const updateData: any = { ...data };
+        
+        // Encrypt contact info if provided
+        if (updateData.contactInfo !== undefined) {
+          updateData.contactInfo = updateData.contactInfo 
+            ? this.encryptContactInfo(updateData.contactInfo) 
+            : null;
+        }
+
+        const updated = await tx.patient.update({
+          where: { id: patientId },
+          data: updateData,
+          include: {
+            createdBy: {
+              select: { id: true, name: true, role: true },
+            },
+          },
+        });
+
+        // Future: Add audit log entry
+        // await tx.auditLog.create({...})
+
+        return updated;
+      });
+
+      // Invalidate cache
+      try {
+        await this.cacheManager.del(this.buildPatientCacheKey(patientId));
+      } catch (err) {
+        this.logger.debug(`Cache invalidation failed: ${err.message}`);
+      }
+
+      // Return with decrypted contact info
+      return {
+        ...updatedPatient,
+        contactInfo: updatedPatient.contactInfo 
+          ? this.decryptContactInfo(updatedPatient.contactInfo) 
+          : null,
+      };
+
+    } catch (error) {
+      if (error.code === 'P2025') {
+        throw new NotFoundException('Patient not found during update');
+      }
+      
+      this.logger.error('updatePatient error', error);
+      throw new InternalServerErrorException('Failed to update patient');
+    }
+  }
+
+  /**
+   * DELETE PATIENT
+   * Only Admins can delete patients
+   * Checks for related records before deletion
+   */
+  async deletePatient(params: {
+    requesterId: number;
+    requesterRole: string;
+    patientId: number;
+    force?: boolean;
+  }): Promise<{ success: boolean; message?: string }> {
+    const { requesterId, requesterRole, patientId, force = false } = params;
+
+    // Authorization: Only Admins can delete
+    if (requesterRole !== 'ADMIN') {
+      throw new ForbiddenException('Only Admins can delete patient records');
+    }
+
+    // Check if patient exists
+    const patient = await this.prisma.patient.findUnique({
+      where: { id: patientId },
+      select: { id: true, name: true },
+    });
+
+    if (!patient) {
+      throw new NotFoundException('Patient not found');
+    }
+
+    // Check for related records
+    const [appointmentCount, prescriptionCount] = await Promise.all([
+      this.prisma.appointment.count({ where: { patientId } }),
+      this.prisma.prescription.count({ where: { patientId } }),
+    ]);
+
+    if (!force && (appointmentCount > 0 || prescriptionCount > 0)) {
+      throw new BadRequestException(
+        `Patient has related records (appointments: ${appointmentCount}, prescriptions: ${prescriptionCount}). Use force=true to override (WARNING: This will delete all related data).`,
+      );
+    }
+
+    try {
+      await this.prisma.$transaction(async (tx) => {
+        // If force=true, delete related records first
+        if (force) {
+          await tx.prescription.deleteMany({ where: { patientId } });
+          await tx.appointment.deleteMany({ where: { patientId } });
+        }
+
+        // Delete the patient
+        await tx.patient.delete({ where: { id: patientId } });
+
+        // Future: Add audit log entry
+        // await tx.auditLog.create({...})
+      });
+
+      // Invalidate cache
+      try {
+        await this.cacheManager.del(this.buildPatientCacheKey(patientId));
+      } catch (err) {
+        this.logger.debug(`Cache invalidation failed: ${err.message}`);
+      }
+
+      return {
+        success: true,
+        message: force 
+          ? 'Patient and all related records deleted successfully' 
+          : 'Patient deleted successfully',
+      };
+
+    } catch (error) {
+      this.logger.error('deletePatient error', error);
+      throw new InternalServerErrorException('Failed to delete patient');
+    }
+  }
 }
+
