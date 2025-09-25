@@ -5,6 +5,7 @@ import { ConfigModule } from '@nestjs/config';
 import { AuthModule } from './auth/auth.module';
 import { RedisModule } from './redis/redis.module';
 import { UsersModule } from './users/users.module';
+import { PatientsModule } from './patients/patients.module';
 
 
 @Module({
@@ -12,7 +13,8 @@ import { UsersModule } from './users/users.module';
     ConfigModule.forRoot(),
     AuthModule,
     RedisModule,
-    UsersModule
+    UsersModule,
+    PatientsModule,
   ],
   controllers: [AppController],
   providers: [AppService],
