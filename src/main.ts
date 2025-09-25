@@ -11,6 +11,8 @@ async function bootstrap() {
   .addTag('hospital-management')
   .addTag('auth')
   .addTag('users')
+  .addTag('patients')
+  .addTag('appointments')
   .setVersion('1.0')
   .build();
   const document = SwaggerModule.createDocument(app,config);

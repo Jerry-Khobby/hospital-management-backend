@@ -2,13 +2,12 @@ import { Controller, Post, Get, Patch, Param, Query, Body, Req, UseGuards } from
 import { AppointmentsService } from './appointments.service';
 import { CreateAppointmentDto, UpdateAppointmentDto } from './dto/appointments.dto';
 import { AuthMiddleware } from 'src/auth/jwt.strategy';
- // Assume you have a roles guard
-
 import { RolesGuard } from 'src/auth/roles.guard';
 
-//Api documentation to it 
+// Swagger decorators
+import { ApiTags } from '@nestjs/swagger';
 
-
+@ApiTags('appointments') // <-- Add this for Swagger grouping
 @Controller('appointments')
 @UseGuards(AuthMiddleware, RolesGuard)
 export class AppointmentsController {
