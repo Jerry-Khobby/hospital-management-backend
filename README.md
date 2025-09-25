@@ -1,98 +1,172 @@
+# Hospital Management System
+
 <p align="center">
-  <a href="http://nestjs.com/" target="blank"><img src="https://nestjs.com/img/logo-small.svg" width="120" alt="Nest Logo" /></a>
+  <a href="http://nestjs.com/" target="blank"><img src="https://nestjs.com/img/logo-small.svg" width="120" alt="NestJS Logo" /></a>
 </p>
 
-[circleci-image]: https://img.shields.io/circleci/build/github/nestjs/nest/master?token=abc123def456
-[circleci-url]: https://circleci.com/gh/nestjs/nest
+A scalable backend API for hospital management, built with [NestJS](https://nestjs.com/), [Prisma ORM](https://www.prisma.io/), PostgreSQL, and Redis.
 
-  <p align="center">A progressive <a href="http://nodejs.org" target="_blank">Node.js</a> framework for building efficient and scalable server-side applications.</p>
-    <p align="center">
-<a href="https://www.npmjs.com/~nestjscore" target="_blank"><img src="https://img.shields.io/npm/v/@nestjs/core.svg" alt="NPM Version" /></a>
-<a href="https://www.npmjs.com/~nestjscore" target="_blank"><img src="https://img.shields.io/npm/l/@nestjs/core.svg" alt="Package License" /></a>
-<a href="https://www.npmjs.com/~nestjscore" target="_blank"><img src="https://img.shields.io/npm/dm/@nestjs/common.svg" alt="NPM Downloads" /></a>
-<a href="https://circleci.com/gh/nestjs/nest" target="_blank"><img src="https://img.shields.io/circleci/build/github/nestjs/nest/master" alt="CircleCI" /></a>
-<a href="https://discord.gg/G7Qnnhy" target="_blank"><img src="https://img.shields.io/badge/discord-online-brightgreen.svg" alt="Discord"/></a>
-<a href="https://opencollective.com/nest#backer" target="_blank"><img src="https://opencollective.com/nest/backers/badge.svg" alt="Backers on Open Collective" /></a>
-<a href="https://opencollective.com/nest#sponsor" target="_blank"><img src="https://opencollective.com/nest/sponsors/badge.svg" alt="Sponsors on Open Collective" /></a>
-  <a href="https://paypal.me/kamilmysliwiec" target="_blank"><img src="https://img.shields.io/badge/Donate-PayPal-ff3f59.svg" alt="Donate us"/></a>
-    <a href="https://opencollective.com/nest#sponsor"  target="_blank"><img src="https://img.shields.io/badge/Support%20us-Open%20Collective-41B883.svg" alt="Support us"></a>
-  <a href="https://twitter.com/nestframework" target="_blank"><img src="https://img.shields.io/twitter/follow/nestframework.svg?style=social&label=Follow" alt="Follow us on Twitter"></a>
-</p>
-  <!--[![Backers on Open Collective](https://opencollective.com/nest/backers/badge.svg)](https://opencollective.com/nest#backer)
-  [![Sponsors on Open Collective](https://opencollective.com/nest/sponsors/badge.svg)](https://opencollective.com/nest#sponsor)-->
+---
 
-## Description
+## Table of Contents
 
-[Nest](https://github.com/nestjs/nest) framework TypeScript starter repository.
+- [Features](#features)
+- [Tech Stack](#tech-stack)
+- [Getting Started](#getting-started)
+- [API Documentation](#api-documentation)
+- [Testing](#testing)
+- [Docker & Deployment](#docker--deployment)
+- [CI/CD](#cicd)
+- [Folder Structure](#folder-structure)
+- [Contributing](#contributing)
+- [License](#license)
+- [Author](#author)
 
-## Project setup
+---
 
-```bash
-$ npm install
-```
+## Features
 
-## Compile and run the project
+- **User Authentication & Authorization** (JWT, role-based access)
+- **User Management** (Admin, Doctor, Nurse, Patient, Pharmacist)
+- **Patient Records** (CRUD, optimistic concurrency)
+- **Appointments & Prescriptions**
+- **Caching** (Redis for performance)
+- **API Documentation** (Swagger)
+- **Dockerized for easy deployment**
+- **CI/CD with GitHub Actions**
 
-```bash
-# development
-$ npm run start
+---
 
-# watch mode
-$ npm run start:dev
+## Tech Stack
 
-# production mode
-$ npm run start:prod
-```
+- **NestJS** (TypeScript)
+- **Prisma ORM**
+- **PostgreSQL** (database)
+- **Redis** (cache)
+- **Swagger** (API docs)
+- **Docker & Docker Compose**
+- **GitHub Actions** (CI/CD)
 
-## Run tests
+---
 
-```bash
-# unit tests
-$ npm run test
+## Getting Started
 
-# e2e tests
-$ npm run test:e2e
-
-# test coverage
-$ npm run test:cov
-```
-
-## Deployment
-
-When you're ready to deploy your NestJS application to production, there are some key steps you can take to ensure it runs as efficiently as possible. Check out the [deployment documentation](https://docs.nestjs.com/deployment) for more information.
-
-If you are looking for a cloud-based platform to deploy your NestJS application, check out [Mau](https://mau.nestjs.com), our official platform for deploying NestJS applications on AWS. Mau makes deployment straightforward and fast, requiring just a few simple steps:
+### 1. Clone the repository
 
 ```bash
-$ npm install -g @nestjs/mau
-$ mau deploy
+git clone https://github.com/Jerry-Khobby/hospital-management.git
+cd hospital-management
 ```
 
-With Mau, you can deploy your application in just a few clicks, allowing you to focus on building features rather than managing infrastructure.
+### 2. Install dependencies
 
-## Resources
+```bash
+npm install
+```
 
-Check out a few resources that may come in handy when working with NestJS:
+### 3. Set up environment variables
 
-- Visit the [NestJS Documentation](https://docs.nestjs.com) to learn more about the framework.
-- For questions and support, please visit our [Discord channel](https://discord.gg/G7Qnnhy).
-- To dive deeper and get more hands-on experience, check out our official video [courses](https://courses.nestjs.com/).
-- Deploy your application to AWS with the help of [NestJS Mau](https://mau.nestjs.com) in just a few clicks.
-- Visualize your application graph and interact with the NestJS application in real-time using [NestJS Devtools](https://devtools.nestjs.com).
-- Need help with your project (part-time to full-time)? Check out our official [enterprise support](https://enterprise.nestjs.com).
-- To stay in the loop and get updates, follow us on [X](https://x.com/nestframework) and [LinkedIn](https://linkedin.com/company/nestjs).
-- Looking for a job, or have a job to offer? Check out our official [Jobs board](https://jobs.nestjs.com).
+Create a `.env` file in the root directory:
 
-## Support
+```env
+POSTGRES_DB=your_db
+POSTGRES_USER=your_user
+POSTGRES_PASSWORD=your_password
+DATABASE_URL=postgresql://your_user:your_password@localhost:5432/your_db
+JWT_SECRET=your_jwt_secret
+REDIS_URL=redis://localhost:6379
+```
 
-Nest is an MIT-licensed open source project. It can grow thanks to the sponsors and support by the amazing backers. If you'd like to join them, please [read more here](https://docs.nestjs.com/support).
+### 4. Run database migrations
 
-## Stay in touch
+```bash
+npx prisma migrate dev
+```
 
-- Author - [Kamil Myśliwiec](https://twitter.com/kammysliwiec)
-- Website - [https://nestjs.com](https://nestjs.com/)
-- Twitter - [@nestframework](https://twitter.com/nestframework)
+### 5. Start the application
+
+```bash
+# Development
+npm run start:dev
+
+# Production
+npm run build
+npm run start:prod
+```
+
+### 6. Run with Docker
+
+```bash
+docker-compose up --build
+```
+
+---
+
+## API Documentation
+
+Swagger docs are available at [http://localhost:3333/api](http://localhost:3333/api) when the app is running.
+
+---
+
+## Testing
+
+```bash
+# Unit tests
+npm run test
+
+# End-to-end tests
+npm run test:e2e
+
+# Test coverage
+npm run test:cov
+```
+
+---
+
+## Docker & Deployment
+
+- The project includes a `Dockerfile` and `docker-compose.yml` for easy containerized setup.
+- Services: backend (NestJS), PostgreSQL, Redis.
+- See [docker-compose.yml](./docker-compose.yml) for configuration.
+
+---
+
+## CI/CD
+
+This project uses GitHub Actions for continuous integration.  
+See `.github/workflows/ci.yml` for details.
+
+---
+
+## Folder Structure
+
+```
+src/
+  auth/         # Authentication & authorization
+  users/        # User management
+  patients/     # Patient records
+  appointments/ # Appointments
+  prescriptions/# Prescriptions
+  prisma/       # Prisma schema
+  redis/        # Redis cache integration
+  app.module.ts # Main NestJS module
+```
+
+---
+
+## Contributing
+
+Feel free to open issues or submit PRs for improvements and new features!
+
+---
 
 ## License
 
-Nest is [MIT licensed](https://github.com/nestjs/nest/blob/master/LICENSE).
+MIT
+
+---
+
+## Author
+
+- **Jerry-Khobby** ([GitHub](https://github.com/Jerry-Khobby))
+- **Email:** jerrymardeburg@gmail.com
