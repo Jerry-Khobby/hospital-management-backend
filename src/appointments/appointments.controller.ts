@@ -9,7 +9,7 @@ import { ApiTags } from '@nestjs/swagger';
 
 @ApiTags('appointments') // <-- Add this for Swagger grouping
 @Controller('appointments')
-@UseGuards(AuthMiddleware, RolesGuard)
+@UseGuards(RolesGuard)
 export class AppointmentsController {
   constructor(private readonly appointmentsService: AppointmentsService) {}
 
