@@ -7,6 +7,7 @@ import { RedisModule } from './redis/redis.module';
 import { UsersModule } from './users/users.module';
 import { PatientsModule } from './patients/patients.module';
 import { AppointmentsModule } from './appointments/appointments.module';
+import { PrescriptionsModule } from './prescriptions/prescriptions.module';
 
 
 @Module({
@@ -17,6 +18,7 @@ import { AppointmentsModule } from './appointments/appointments.module';
     UsersModule,
     PatientsModule,
     AppointmentsModule,
+    PrescriptionsModule,
   ],
   controllers: [AppController],
   providers: [AppService],
